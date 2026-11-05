@@ -14,7 +14,7 @@ if ($ENV{CI})
     set(BUILD_TAG $ENV{BITRISE_GIT_TAG})
   endif()
   # regex capture the string nightly or canary into CMAKE_MATCH_1
-  string(REGEX MATCH "citra-emu/citra-?(.*)" OUTVAR ${BUILD_REPOSITORY})
+  string(REGEX MATCH "citra-emu/citra-?(.*)" OUTVAR "${BUILD_REPOSITORY}")
   if (${CMAKE_MATCH_COUNT} GREATER 0)
     # capitalize the first letter of each word in the repo name.
     string(REPLACE "-" ";" REPO_NAME_LIST ${CMAKE_MATCH_1})
