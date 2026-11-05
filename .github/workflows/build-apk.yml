@@ -1,0 +1,69 @@
+name: Compilar APK
+
+# Se puede lanzar a mano desde la pestaña Actions o al hacer push.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, main ]
+
+jobs:
+  apk:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # build.gradle usa `git describe` para la version
+
+      - name: Preparar fuentes (submodulos + espejos vivos)
+        run: bash scripts/prepare-sources.sh
+
+      - name: Instalar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar herramientas de Android
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar SDK, NDK y CMake
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install \
+            "platforms;android-31" \
+            "build-tools;34.0.0" \
+            "ndk;26.3.11579264" \
+            "cmake;3.22.1"
+
+      - name: Instalar Gradle 8.6
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.6'
+
+      # assembleDebug deja el paquete como org.citra.emu.debug,
+      # asi se instala AL LADO del Citra original (no lo reemplaza ni lo borra).
+      - name: Compilar APK (debug)
+        working-directory: src/android
+        env:
+          GRADLE_OPTS: -Xmx4g
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Guardar el APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: citra-mmj-debug-apk
+          path: src/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Guardar el log si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-de-compilacion
+          path: |
+            src/android/app/.cxx/**/*.log
+            src/android/build/reports/**
+          if-no-files-found: ignore
