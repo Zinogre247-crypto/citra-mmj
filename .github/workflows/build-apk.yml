@@ -26,17 +26,40 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Instalar herramientas de Android
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar SDK, NDK y CMake
+      # Se hace a mano en vez de con android-actions/setup-android porque esa
+      # accion falla de forma intermitente en los runners de GitHub.
+      - name: Instalar Android SDK, NDK y CMake
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install \
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "SDK base: $SDK"
+
+          if command -v sdkmanager > /dev/null 2>&1; then
+            SDKM="sdkmanager"
+          elif [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
+            SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          else
+            echo "== descargando cmdline-tools =="
+            mkdir -p "$SDK/cmdline-tools"
+            curl -sSLo /tmp/cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip -q -o /tmp/cmdtools.zip -d "$SDK/cmdline-tools"
+            mv "$SDK/cmdline-tools/cmdline-tools" "$SDK/cmdline-tools/latest"
+            SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          fi
+
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK=$SDK/ndk/26.3.11579264" >> "$GITHUB_ENV"
+
+          yes | "$SDKM" --sdk_root="$SDK" --licenses > /dev/null 2>&1 || true
+          "$SDKM" --sdk_root="$SDK" --install \
             "platforms;android-31" \
             "build-tools;34.0.0" \
             "ndk;26.3.11579264" \
             "cmake;3.22.1"
+
+          echo "== instalado =="
+          ls "$SDK/ndk" "$SDK/cmake" 2>/dev/null || true
 
       - name: Instalar Gradle 8.6
         uses: gradle/actions/setup-gradle@v4
@@ -66,4 +89,5 @@ jobs:
           path: |
             src/android/app/.cxx/**/*.log
             src/android/build/reports/**
+            /home/runner/.gradle/daemon/**/*.log
           if-no-files-found: ignore
