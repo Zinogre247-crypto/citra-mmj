@@ -28,6 +28,14 @@ jobs:
 
       # Se hace a mano en vez de con android-actions/setup-android porque esa
       # accion falla de forma intermitente en los runners de GitHub.
+      - name: Cachear NDK y CMake
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk
+            /usr/local/lib/android/sdk/cmake
+          key: android-ndk-26.3.11579264-cmake-3.22.1
+
       - name: Instalar Android SDK, NDK y CMake
         run: |
           set -euo pipefail
@@ -72,7 +80,7 @@ jobs:
         working-directory: src/android
         env:
           GRADLE_OPTS: -Xmx4g
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --continue --stacktrace
 
       - name: Guardar el APK
         uses: actions/upload-artifact@v4

@@ -20,6 +20,12 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_ARM64)
     option(DYNARMIC_TESTS OFF)
     set(DYNARMIC_NO_BUNDLED_FMT ON)
     add_subdirectory(dynarmic)
+    # El Dynarmic de 2022 usa boost::variant, y el Boost antiguo de Citra recurre
+    # a std::unary_function, eliminado en C++17. Boost respeta esta macro y usa
+    # su propia implementacion en su lugar.
+    if(TARGET dynarmic)
+        target_compile_definitions(dynarmic PRIVATE _HAS_AUTO_PTR_ETC=0)
+    endif()
 endif()
 
 # libfmt
@@ -59,8 +65,12 @@ add_subdirectory(minilzo)
 
 # SoundTouch
 add_subdirectory(soundtouch)
-# The SoundTouch target doesn't export the necessary include paths as properties by default
-target_include_directories(SoundTouch INTERFACE ./soundtouch/include)
+# El fork viejo de SoundTouch no exporta sus rutas de include; las versiones
+# nuevas (2.3.x) si lo hacen, y anadirlas otra vez rompe la generacion.
+get_target_property(SOUNDTOUCH_INCLUDES SoundTouch INTERFACE_INCLUDE_DIRECTORIES)
+if(NOT SOUNDTOUCH_INCLUDES)
+    target_include_directories(SoundTouch INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/soundtouch/include)
+endif()
 
 # Teakra
 add_subdirectory(teakra)

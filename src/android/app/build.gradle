@@ -17,12 +17,16 @@ android {
         versionName "${getVersion()}"
     }
 
+    // La configuracion original apuntaba a una ruta de Windows del autor
+    // (D:/Android/...), que rompe cualquier build en Linux/CI.
+    // Ahora la clave se toma de variables de entorno y, si no hay ninguna,
+    // se usa un keystore local en la raiz del proyecto Android.
     signingConfigs {
         release {
-            keyAlias 'dolphin-release-key'
-            keyPassword 'zhangwei'
-            storeFile file('D:/Android/android-sign-key/dolphin-release-key.jks')
-            storePassword 'zhangwei'
+            keyAlias = System.getenv('CITRA_KEY_ALIAS') ?: 'dolphin-release-key'
+            keyPassword = System.getenv('CITRA_KEY_PASSWORD') ?: 'zhangwei'
+            storeFile = file(System.getenv('CITRA_KEYSTORE') ?: "${rootDir}/citra-release.jks")
+            storePassword = System.getenv('CITRA_STORE_PASSWORD') ?: 'zhangwei'
         }
     }
 

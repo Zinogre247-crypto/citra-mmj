@@ -53,7 +53,7 @@ for p in "${PATHS[@]}"; do
     esac
 done
 if [ ${#KEEP[@]} -gt 0 ]; then
-    git submodule update --init --depth 1 --jobs 4 -- "${KEEP[@]}" || true
+    git submodule update --init --recursive --depth 1 --jobs 4 -- "${KEEP[@]}" || true
 fi
 
 # --- 3. Fijar a mano los dos submodulos con commit propio ------------------
@@ -64,7 +64,6 @@ pin_submodule() {
     git clone --quiet "$url" "$path"
     git -C "$path" checkout --quiet "$sha"
     git -C "$path" submodule update --init --depth 1 --recursive --jobs 4 || true
-    rm -rf "$path/.git"
     git update-index --add --cacheinfo "160000,$sha,$path"
 }
 

@@ -181,11 +181,11 @@ struct Values {
 
     // Audio
     bool enable_dsp_lle;
-    bool dsp_lle_multithread;
+    bool enable_dsp_lle_multithread;
     std::string sink_id;
     bool enable_audio_stretching;
     std::string audio_device_id;
-    float audio_volume;
+    float volume;
     float mic_volume;
     MicInputType mic_input_type;
     std::string mic_input_device;
@@ -194,6 +194,15 @@ struct Values {
     std::array<std::string, Service::CAM::NumCameras> camera_name;
     std::array<std::string, Service::CAM::NumCameras> camera_config;
     std::array<int, Service::CAM::NumCameras> camera_flip;
+
+    // Ajustes de compatibilidad que el resto del codigo espera encontrar
+    bool use_hw_gs;
+    bool allow_shadow;
+    bool use_linear_filter;
+    bool display_transfer_hack;
+    bool y2r_perform_hack;
+    bool preload_textures;
+    bool enable_telemetry;
 
     // Debugging
     bool use_gdbstub;
